@@ -1,3 +1,4 @@
+import json
 import subprocess
 import platform
 import sys
@@ -63,11 +64,12 @@ def _get_pacman_packages() -> Dict[str, str]:
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Failed to get Pacman packages: {e.stderr}")
 
-def save_packages_to_file(filename: str = None) -> None:
+def save_packages_to_file(filename: str = None, json_format: bool = False) -> None:
     """Save currently installed packages to file with timestamp.
     
     Args:
         filename: Optional output file name. If None, uses timestamped filename.
+        json_format: If True, saves in JSON format (default: False)
     """
     try:
         packages = get_installed_packages()
@@ -75,23 +77,39 @@ def save_packages_to_file(filename: str = None) -> None:
         
         # Use timestamped filename if none provided
         if filename is None:
-            filename = f"packages_{timestamp}.txt"
+            ext = ".json" if json_format else ".txt"
+            filename = f"packages_{timestamp}{ext}"
         
         with open(filename, "w") as f:
-            f.write(f"Package snapshot taken at: {timestamp.replace('_', ' ')}\n")
-            f.write(f"System: {platform.system()} {platform.release()}\n")
-            f.write(f"Package manager: {detect_package_manager()}\n\n")
-            for pkg, ver in sorted(packages.items()):
-                f.write(f"{pkg}: {ver}\n")
+            if json_format:
+                json.dump({
+                    "timestamp": timestamp.replace('_', ' '),
+                    "system": f"{platform.system()} {platform.release()}",
+                    "package_manager": detect_package_manager(),
+                    "packages": packages
+                }, f, indent=2)
+            else:
+                f.write(f"Package snapshot taken at: {timestamp.replace('_', ' ')}\n")
+                f.write(f"System: {platform.system()} {platform.release()}\n")
+                f.write(f"Package manager: {detect_package_manager()}\n\n")
+                for pkg, ver in sorted(packages.items()):
+                    f.write(f"{pkg}: {ver}\n")
                 
     except Exception as e:
         raise RuntimeError(f"Failed to save packages: {str(e)}")
 if __name__ == "__main__":
     try:
         filename = None
+        json_format = False
+        
+        if "--json" in sys.argv:
+            json_format = True
+            sys.argv.remove("--json")
+            
         if len(sys.argv) > 1:
             filename = sys.argv[1]
-        save_packages_to_file(filename)
+            
+        save_packages_to_file(filename, json_format)
         print(f"Successfully saved package list to {filename or 'timestamped file'}")
     except Exception as e:
         print(f"Error: {str(e)}")
