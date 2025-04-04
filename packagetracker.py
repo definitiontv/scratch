@@ -230,22 +230,35 @@ def save_packages_to_file(
             
         # Write to temp file first then rename for atomic operation
         temp_filename = filename + '.tmp'
-        open_func = gzip.open if compressed else open
-        with open_func(temp_filename, 'wt' if json_format else 'wb') as f:
+        if compressed:
+            open_func = gzip.open
+            mode = 'wt' if json_format else 'wb'
+        else:
+            open_func = open
+            mode = 'w'
+            
+        with open_func(temp_filename, mode) as f:
             if json_format:
                 json.dump(data, f, indent=2)
             else:
-                f.write(f"System Metadata:\n")
+                content = []
+                content.append("System Metadata:")
                 for key, value in data['metadata'].items():
-                    f.write(f"{key}: {value}\n")
-                f.write(f"\nPackage snapshot taken at: {data['timestamp']}\n")
-                f.write(f"Package manager: {data['package_manager']}\n\n")
+                    content.append(f"{key}: {value}")
+                content.append(f"\nPackage snapshot taken at: {data['timestamp']}")
+                content.append(f"Package manager: {data['package_manager']}\n")
+                
                 for pkg, details in sorted(data['packages'].items()):
-                    f.write(f"{pkg} ({details['version']})\n")
+                    content.append(f"{pkg} ({details['version']})")
                     if detailed:
-                        f.write(f"  Description: {details.get('description', 'N/A')}\n")
-                        f.write(f"  Dependencies: {', '.join(details.get('dependencies', []))}\n")
-                    f.write("\n")
+                        content.append(f"  Description: {details.get('description', 'N/A')}")
+                        content.append(f"  Dependencies: {', '.join(details.get('dependencies', []))}")
+                    content.append("")
+                
+                if compressed and not json_format:
+                    f.write('\n'.join(content).encode('utf-8'))
+                else:
+                    f.write('\n'.join(content))
                 
     except Exception as e:
         raise RuntimeError(f"Failed to save packages: {str(e)}")
