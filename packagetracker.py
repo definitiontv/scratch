@@ -1,6 +1,7 @@
 import subprocess
 import platform
 from typing import Dict
+from datetime import datetime
 
 def detect_package_manager() -> str:
     """Detect the system's package manager."""
@@ -60,3 +61,30 @@ def _get_pacman_packages() -> Dict[str, str]:
         return dict(line.split() for line in result.stdout.splitlines())
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Failed to get Pacman packages: {e.stderr}")
+
+def save_packages_to_file(filename: str = "currentpackages.txt") -> None:
+    """Save currently installed packages to file with timestamp.
+    
+    Args:
+        filename: Output file name (default: currentpackages.txt)
+    """
+    try:
+        packages = get_installed_packages()
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        with open(filename, "w") as f:
+            f.write(f"Package snapshot taken at: {timestamp}\n")
+            f.write(f"System: {platform.system()} {platform.release()}\n")
+            f.write(f"Package manager: {detect_package_manager()}\n\n")
+            for pkg, ver in sorted(packages.items()):
+                f.write(f"{pkg}: {ver}\n")
+                
+    except Exception as e:
+        raise RuntimeError(f"Failed to save packages: {str(e)}")
+if __name__ == "__main__":
+    try:
+        save_packages_to_file()
+        print("Successfully saved package list to currentpackages.txt")
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        exit(1)
