@@ -6,6 +6,7 @@ import gzip
 import socket
 import os
 import shutil
+import distro  # Added
 from typing import Dict
 from datetime import datetime
 
@@ -18,8 +19,8 @@ def detect_package_manager(test_mode: bool = False) -> str:
     if test_mode:
         return 'apt'  # Default test value
     
-    distro = platform.linux_distribution()[0].lower()
-    if 'ubuntu' in distro or 'debian' in distro:
+    distro_id = distro.id().lower()
+    if distro_id in ('ubuntu', 'debian'):
         return 'apt'
     elif 'centos' in distro or 'redhat' in distro or 'fedora' in distro:
         return 'yum'
@@ -84,7 +85,12 @@ def _get_system_metadata() -> dict:
             "release": platform.release(),
             "version": platform.version(),
             "machine": platform.machine(),
-            "distro": platform.linux_distribution()
+            "distro": {
+                "id": distro.id(),
+                "name": distro.name(),
+                "version": distro.version(),
+                "codename": distro.codename()
+            }
         },
         "python": {
             "version": platform.python_version(),
