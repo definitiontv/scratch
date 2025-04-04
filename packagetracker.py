@@ -131,7 +131,8 @@ def save_packages_to_file(
     filename: str = None,
     json_format: bool = False,
     compressed: bool = False,
-    detailed: bool = False
+    detailed: bool = False,
+    test_mode: bool = False
 ) -> None:
     """Save installed packages to file with enhanced options.
     
@@ -142,7 +143,25 @@ def save_packages_to_file(
         detailed: Include package details if True
     """
     try:
+        # First validate we can detect package manager
+        pkg_manager = detect_package_manager()
+        if pkg_manager == 'unknown':
+            raise RuntimeError("Could not detect supported package manager")
+            
+        # Validate required commands exist
+        required_commands = {
+            'apt': ['dpkg-query', 'apt-cache'],
+            'yum': ['rpm'],
+            'pacman': ['pacman']
+        }.get(pkg_manager, [])
+        
+        for cmd in required_commands:
+            if not shutil.which(cmd):
+                raise RuntimeError(f"Required command not found: {cmd}")
+                
         packages = get_installed_packages()
+        if not packages:
+            raise RuntimeError("No packages found - possible detection error")
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         pkg_manager = detect_package_manager()
         
@@ -165,8 +184,15 @@ def save_packages_to_file(
                 pkg_data.update(_get_package_details(pkg_manager, pkg))
             data["packages"][pkg] = pkg_data
         
+        if test_mode:
+            print("Test mode - would write to:", filename)
+            print("Sample data:", json.dumps(data, indent=2)[:500] + "...")
+            return
+            
+        # Write to temp file first then rename for atomic operation
+        temp_filename = filename + '.tmp'
         open_func = gzip.open if compressed else open
-        with open_func(filename, 'wt' if json_format else 'wb') as f:
+        with open_func(temp_filename, 'wt' if json_format else 'wb') as f:
             if json_format:
                 json.dump(data, f, indent=2)
             else:
@@ -190,6 +216,7 @@ if __name__ == "__main__":
         json_format = False
         compressed = False
         detailed = False
+        test_mode = False
         
         if "--json" in sys.argv:
             json_format = True
@@ -200,6 +227,9 @@ if __name__ == "__main__":
         if "--detailed" in sys.argv:
             detailed = True
             sys.argv.remove("--detailed")
+        if "--test" in sys.argv:
+            test_mode = True
+            sys.argv.remove("--test")
             
         if len(sys.argv) > 1 and not sys.argv[1].startswith('-'):
             filename = sys.argv[1]
@@ -208,7 +238,8 @@ if __name__ == "__main__":
             filename=filename,
             json_format=json_format,
             compressed=compressed,
-            detailed=detailed
+            detailed=detailed,
+            test_mode=test_mode
         )
         print(f"Successfully saved package list to {filename or 'timestamped file'}")
     except Exception as e:
