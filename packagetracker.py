@@ -240,44 +240,64 @@ def save_packages_to_file(
             
         # Write to temp file first then rename for atomic operation
         temp_filename = filename + '.tmp'
+        file_handle = None
+        
         try:
+            # Determine file opening mode
             if compressed:
                 open_func = gzip.open
                 mode = 'wt' if json_format else 'wb'
             else:
-                open_func = open
+                open_func = open  
                 mode = 'w'
-                
-            with open_func(temp_filename, mode) as f:
-                if json_format:
-                    json.dump(data, f, indent=2)
-                else:
-                    content = []
-                    content.append("System Metadata:")
-                for key, value in data['metadata'].items():
-                    content.append(f"{key}: {value}")
-                content.append(f"\nPackage snapshot taken at: {data['timestamp']}")
-                content.append(f"Package manager: {data['package_manager']}\n")
-                
-                for pkg, details in sorted(data['packages'].items()):
-                    content.append(f"{pkg} ({details['version']})")
-                    if detailed:
-                        content.append(f"  Description: {details.get('description', 'N/A')}")
-                        content.append(f"  Dependencies: {', '.join(details.get('dependencies', []))}")
-                    content.append("")
+
+            # Open file and write content
+            file_handle = open_func(temp_filename, mode)
+            
+            if json_format:
+                json.dump(data, file_handle, indent=2)
+            else:
+                content = [
+                    "System Metadata:",
+                    *[f"{key}: {value}" for key, value in data['metadata'].items()],
+                    f"\nPackage snapshot taken at: {data['timestamp']}",
+                    f"Package manager: {data['package_manager']}\n",
+                    *[
+                        f"{pkg} ({details['version']})\n"
+                        f"  Description: {details.get('description', 'N/A')}\n"
+                        f"  Dependencies: {', '.join(details.get('dependencies', []))}\n"
+                        if detailed else 
+                        f"{pkg} ({details['version']})\n"
+                        for pkg, details in sorted(data['packages'].items())
+                    ]
+                ]
                 
                 if compressed and not json_format:
-                    f.write('\n'.join(content).encode('utf-8'))
+                    file_handle.write('\n'.join(content).encode('utf-8'))
                 else:
-                    f.write('\n'.join(content))
+                    file_handle.write('\n'.join(content))
+
+            # Close file before rename
+            if file_handle:
+                file_handle.close()
             
-            # Rename temp file to final filename
+            # Atomic rename
             os.replace(temp_filename, filename)
             
         except Exception as e:
-            # Clean up temp file if something went wrong
+            # Cleanup in case of error
+            try:
+                if file_handle and not file_handle.closed:
+                    file_handle.close()
+            except:
+                pass
+                
             if os.path.exists(temp_filename):
-                os.remove(temp_filename)
+                try:
+                    os.remove(temp_filename)
+                except:
+                    pass
+                    
             raise RuntimeError(f"Failed to save packages: {str(e)}")
 
 
