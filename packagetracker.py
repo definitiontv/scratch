@@ -249,7 +249,7 @@ def save_packages_to_file(
                 mode = 'w'
                 
             with open_func(temp_filename, mode) as f:
-            if json_format:
+                if json_format:
                 json.dump(data, f, indent=2)
             else:
                 content = []
