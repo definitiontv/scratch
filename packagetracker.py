@@ -193,15 +193,33 @@ def save_packages_to_file(
             data["packages"][pkg] = pkg_data
         
         if test_mode:
-            print("Test mode - would write to:", filename)
-            print("Sample data:", json.dumps(data, indent=2)[:500] + "...")
-            print("\nValidation checks:")
-            print(f"- Package manager: {pkg_manager}")
-            print(f"- Packages found: {len(packages)}")
-            print(f"- Metadata complete: {'hostname' in data['metadata']}")
+            print("\n=== TEST MODE OUTPUT ===")
+            print(f"Would write to: {filename}")
+            print(f"Format: {'JSON' if json_format else 'TEXT'}{' (compressed)' if compressed else ''}")
+            print(f"Detailed info: {'Yes' if detailed else 'No'}")
+            
+            print("\n=== SAMPLE DATA ===")
+            sample_data = json.dumps(data, indent=2)
+            print(sample_data[:500] + ("..." if len(sample_data) > 500 else ""))
+            
+            print("\n=== VALIDATION CHECKS ===")
+            print(f"Package manager detected: {pkg_manager}")
+            print(f"Total packages found: {len(packages)}")
+            print(f"Metadata fields present: {len(data['metadata'])}")
+            print(f"Sample package count matches: {len(packages) == len(data['packages'])}")
+            
             if detailed:
                 sample_pkg = next(iter(packages.keys()))
-                print(f"- Sample package details: {sample_pkg}: {_get_package_details(pkg_manager, sample_pkg)}")
+                details = _get_package_details(pkg_manager, sample_pkg)
+                print("\n=== SAMPLE PACKAGE DETAILS ===")
+                print(f"Package: {sample_pkg}")
+                print(f"Version: {packages[sample_pkg]}")
+                print(f"Description: {details.get('description', 'N/A')}")
+                print(f"Dependencies: {', '.join(details.get('dependencies', [])) or 'None'}")
+            
+            print("\n=== TEST SUMMARY ===")
+            print("All checks passed" if len(packages) > 0 and 'hostname' in data['metadata'] 
+                  else "Some checks failed")
             return
             
         # Write to temp file first then rename for atomic operation
