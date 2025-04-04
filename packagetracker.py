@@ -281,6 +281,7 @@ def save_packages_to_file(
             raise RuntimeError(f"Failed to save packages: {str(e)}")
 
 
+
 def validate_output_file(filename: str, json_format: bool, compressed: bool) -> bool:
     """Validate the output file was created correctly."""
     if not os.path.exists(filename):
