@@ -22,7 +22,7 @@ def detect_package_manager(test_mode: bool = False) -> str:
     distro_id = distro.id().lower()
     if distro_id in ('ubuntu', 'debian'):
         return 'apt'
-    elif 'centos' in distro or 'redhat' in distro or 'fedora' in distro:
+    elif 'centos' in distro_id or 'redhat' in distro_id or 'fedora' in distro_id:
         return 'yum'
     elif 'arch' in distro:
         return 'pacman'
@@ -253,7 +253,7 @@ def save_packages_to_file(
                     json.dump(data, f, indent=2)
                 else:
                     content = []
-                content.append("System Metadata:")
+                    content.append("System Metadata:")
                 for key, value in data['metadata'].items():
                     content.append(f"{key}: {value}")
                 content.append(f"\nPackage snapshot taken at: {data['timestamp']}")
@@ -279,6 +279,7 @@ def save_packages_to_file(
             if os.path.exists(temp_filename):
                 os.remove(temp_filename)
             raise RuntimeError(f"Failed to save packages: {str(e)}")
+
 def validate_output_file(filename: str, json_format: bool, compressed: bool) -> bool:
     """Validate the output file was created correctly."""
     if not os.path.exists(filename):
