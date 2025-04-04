@@ -250,9 +250,9 @@ def save_packages_to_file(
                 
             with open_func(temp_filename, mode) as f:
                 if json_format:
-                json.dump(data, f, indent=2)
-            else:
-                content = []
+                    json.dump(data, f, indent=2)
+                else:
+                    content = []
                 content.append("System Metadata:")
                 for key, value in data['metadata'].items():
                     content.append(f"{key}: {value}")
