@@ -240,14 +240,15 @@ def save_packages_to_file(
             
         # Write to temp file first then rename for atomic operation
         temp_filename = filename + '.tmp'
-        if compressed:
-            open_func = gzip.open
-            mode = 'wt' if json_format else 'wb'
-        else:
-            open_func = open
-            mode = 'w'
-            
-        with open_func(temp_filename, mode) as f:
+        try:
+            if compressed:
+                open_func = gzip.open
+                mode = 'wt' if json_format else 'wb'
+            else:
+                open_func = open
+                mode = 'w'
+                
+            with open_func(temp_filename, mode) as f:
             if json_format:
                 json.dump(data, f, indent=2)
             else:
@@ -269,9 +270,15 @@ def save_packages_to_file(
                     f.write('\n'.join(content).encode('utf-8'))
                 else:
                     f.write('\n'.join(content))
-                
-    except Exception as e:
-        raise RuntimeError(f"Failed to save packages: {str(e)}")
+            
+            # Rename temp file to final filename
+            os.replace(temp_filename, filename)
+            
+        except Exception as e:
+            # Clean up temp file if something went wrong
+            if os.path.exists(temp_filename):
+                os.remove(temp_filename)
+            raise RuntimeError(f"Failed to save packages: {str(e)}")
 def validate_output_file(filename: str, json_format: bool, compressed: bool) -> bool:
     """Validate the output file was created correctly."""
     if not os.path.exists(filename):
