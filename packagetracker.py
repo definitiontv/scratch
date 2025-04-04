@@ -9,8 +9,15 @@ import shutil
 from typing import Dict
 from datetime import datetime
 
-def detect_package_manager() -> str:
-    """Detect the system's package manager."""
+def detect_package_manager(test_mode: bool = False) -> str:
+    """Detect the system's package manager.
+    
+    Args:
+        test_mode: If True, returns test values for all supported package managers
+    """
+    if test_mode:
+        return 'apt'  # Default test value
+    
     distro = platform.linux_distribution()[0].lower()
     if 'ubuntu' in distro or 'debian' in distro:
         return 'apt'
@@ -188,6 +195,13 @@ def save_packages_to_file(
         if test_mode:
             print("Test mode - would write to:", filename)
             print("Sample data:", json.dumps(data, indent=2)[:500] + "...")
+            print("\nValidation checks:")
+            print(f"- Package manager: {pkg_manager}")
+            print(f"- Packages found: {len(packages)}")
+            print(f"- Metadata complete: {'hostname' in data['metadata']}")
+            if detailed:
+                sample_pkg = next(iter(packages.keys()))
+                print(f"- Sample package details: {sample_pkg}: {_get_package_details(pkg_manager, sample_pkg)}")
             return
             
         # Write to temp file first then rename for atomic operation
@@ -211,6 +225,25 @@ def save_packages_to_file(
                 
     except Exception as e:
         raise RuntimeError(f"Failed to save packages: {str(e)}")
+def validate_output_file(filename: str, json_format: bool, compressed: bool) -> bool:
+    """Validate the output file was created correctly."""
+    if not os.path.exists(filename):
+        return False
+        
+    try:
+        if compressed:
+            with gzip.open(filename, 'rt') as f:
+                content = f.read()
+        else:
+            with open(filename, 'r') as f:
+                content = f.read()
+                
+        if json_format:
+            json.loads(content)
+        return True
+    except:
+        return False
+
 if __name__ == "__main__":
     try:
         filename = None
