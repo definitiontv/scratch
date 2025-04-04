@@ -24,9 +24,9 @@ def detect_package_manager(test_mode: bool = False) -> str:
         return 'apt'
     elif 'centos' in distro_id or 'redhat' in distro_id or 'fedora' in distro_id:
         return 'yum'
-    elif 'arch' in distro:
+    elif 'arch' in distro_id:
         return 'pacman'
-    elif 'suse' in distro:
+    elif 'suse' in distro_id:
         return 'zypper'
     return 'unknown'
 
@@ -279,10 +279,6 @@ def save_packages_to_file(
             if os.path.exists(temp_filename):
                 os.remove(temp_filename)
             raise RuntimeError(f"Failed to save packages: {str(e)}")
-        except Exception as e:
-            if os.path.exists(temp_filename):
-                os.remove(temp_filename)
-            raise RuntimeError(f"Failed to save packages: {str(e)}")
 
 def validate_output_file(filename: str, json_format: bool, compressed: bool) -> bool:
     """Validate the output file was created correctly."""
@@ -300,7 +296,7 @@ def validate_output_file(filename: str, json_format: bool, compressed: bool) -> 
         if json_format:
             json.loads(content)
         return True
-    except:
+    except Exception:
         return False
 
 if __name__ == "__main__":
