@@ -192,11 +192,21 @@ def save_packages_to_file(
             "packages": {}
         }
         
+        total_packages = len(packages)
+        processed = 0
         for pkg, ver in packages.items():
             pkg_data = {"version": ver}
             if detailed:
+                if not test_mode:  # Only show progress in non-test mode
+                    processed += 1
+                    progress = (processed / total_packages) * 100
+                    sys.stdout.write(f"\rProcessing packages: {processed}/{total_packages} ({progress:.1f}%)")
+                    sys.stdout.flush()
                 pkg_data.update(_get_package_details(pkg_manager, pkg))
             data["packages"][pkg] = pkg_data
+        
+        if detailed and not test_mode:
+            print()  # New line after progress
         
         if test_mode:
             print("\n=== TEST MODE OUTPUT ===")
