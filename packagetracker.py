@@ -299,6 +299,10 @@ def save_packages_to_file(
                     pass
                     
             raise RuntimeError(f"Failed to save packages: {str(e)}")
+        except Exception as e:
+            if os.path.exists(temp_filename):
+                os.remove(temp_filename)
+            raise RuntimeError(f"Failed to save packages: {str(e)}")
 
 
 
