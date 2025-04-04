@@ -1,5 +1,6 @@
 import subprocess
 import platform
+import sys
 from typing import Dict
 from datetime import datetime
 
@@ -62,18 +63,22 @@ def _get_pacman_packages() -> Dict[str, str]:
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Failed to get Pacman packages: {e.stderr}")
 
-def save_packages_to_file(filename: str = "currentpackages.txt") -> None:
+def save_packages_to_file(filename: str = None) -> None:
     """Save currently installed packages to file with timestamp.
     
     Args:
-        filename: Output file name (default: currentpackages.txt)
+        filename: Optional output file name. If None, uses timestamped filename.
     """
     try:
         packages = get_installed_packages()
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        
+        # Use timestamped filename if none provided
+        if filename is None:
+            filename = f"packages_{timestamp}.txt"
         
         with open(filename, "w") as f:
-            f.write(f"Package snapshot taken at: {timestamp}\n")
+            f.write(f"Package snapshot taken at: {timestamp.replace('_', ' ')}\n")
             f.write(f"System: {platform.system()} {platform.release()}\n")
             f.write(f"Package manager: {detect_package_manager()}\n\n")
             for pkg, ver in sorted(packages.items()):
@@ -83,8 +88,11 @@ def save_packages_to_file(filename: str = "currentpackages.txt") -> None:
         raise RuntimeError(f"Failed to save packages: {str(e)}")
 if __name__ == "__main__":
     try:
-        save_packages_to_file()
-        print("Successfully saved package list to currentpackages.txt")
+        filename = None
+        if len(sys.argv) > 1:
+            filename = sys.argv[1]
+        save_packages_to_file(filename)
+        print(f"Successfully saved package list to {filename or 'timestamped file'}")
     except Exception as e:
         print(f"Error: {str(e)}")
         exit(1)
