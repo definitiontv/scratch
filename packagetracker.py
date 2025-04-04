@@ -5,6 +5,7 @@ import sys
 import gzip
 import socket
 import os
+import shutil
 from typing import Dict
 from datetime import datetime
 
