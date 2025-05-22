@@ -48,6 +48,42 @@ python packagetracker.py [options] [filename]
     python packagetracker.py --test
     ```
 
+### Using the Bash Wrapper (`packagetracker.sh`)
+
+The `packagetracker.sh` script provides a convenient bash wrapper around the `packagetracker.py` script.
+
+**How to run:**
+
+```bash
+./packagetracker.sh [options] [filename]
+```
+
+**Options:**
+
+The wrapper supports several options to control output format and content, such as `--json`, `--gzip`, and `--detailed`. These options are passed directly to the underlying `packagetracker.py` script. For a full list of options and their descriptions, run:
+
+```bash
+./packagetracker.sh --help
+```
+
+**Arguments:**
+
+*   `filename`: Optional. The name of the output file. If not specified, a timestamped filename will be used by `packagetracker.py`.
+
+**Examples:**
+
+*   Save package list to a JSON file using the wrapper:
+
+    ```bash
+    ./packagetracker.sh --json packages.json
+    ```
+
+*   Run in test mode using the wrapper:
+
+    ```bash
+    ./packagetracker.sh --test
+    ```
+
 ## Dependencies
 
 *   `python3`
